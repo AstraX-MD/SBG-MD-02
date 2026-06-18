@@ -55,13 +55,60 @@ async function startBot() {
             console.log('Connection closed. Reconnecting:', shouldReconnect);
             if (shouldReconnect) startBot();
         } else if (connection === 'open') {
-            console.log('WhatsApp Bot connected successfully!');
+            const db = loadDB();
+            let dbType = 'Local JSON File';
+            if (process.env.MONGO_URL) dbType = 'MongoDB';
+            else if (process.env.SUPABASE_URL && process.env.SUPABASE_KEY) dbType = 'Supabase';
+            else if (process.env.FIREBASE_CONFIG_BASE64) dbType = 'Firebase Firestore';
+            else if (process.env.USE_SQLITE) dbType = 'SQLite';
+
+            db.getSettings().then(settings => {
+                console.log(`\n==========================================`);
+                console.log(`🔌 CONNECTED    : YES`);
+                console.log(`📱 JID          : ${sock.user?.id || 'Unknown'}`);
+                console.log(`🤖 PREFIX       : ${settings.prefix || process.env.PREFIX || '!'}`);
+                console.log(`📂 DATABASE     : ${dbType}`);
+                console.log(`⚙️  MODE         : Public (Responds to all)`);
+                console.log(`==========================================\n`);
+            }).catch(err => {
+                console.log('WhatsApp Bot connected successfully! JID:', sock.user?.id);
+            });
         }
     });
 
     sock.ev.on('messages.upsert', async ({ messages, type }) => {
-        if (type !== 'notify') return;
         const msg = messages[0];
+        if (!msg) return;
+        
+        // Comprehensive Message Logging
+        if (msg.message) {
+            const isGroup = !!msg.key.remoteJid?.endsWith('@g.us');
+            const isStatus = msg.key.remoteJid === 'status@broadcast';
+            const isChannel = !!msg.key.remoteJid?.endsWith('@newsletter');
+            const locationStr = isGroup ? 'GROUP' : isStatus ? 'STATUS' : isChannel ? 'CHANNEL' : 'DM';
+            const sender = msg.key.participant || msg.key.remoteJid;
+            
+            let messageContent = msg.message.ephemeralMessage?.message || 
+                                 msg.message.viewOnceMessageV2?.message || 
+                                 msg.message.viewOnceMessage?.message || 
+                                 msg.message.documentWithCaptionMessage?.message?.documentMessage || 
+                                 msg.message;
+
+            let msgType = 'MSG';
+            if (messageContent.imageMessage) msgType = 'IMG';
+            else if (messageContent.videoMessage) msgType = 'VDO';
+            else if (messageContent.audioMessage) msgType = 'AUD';
+            else if (messageContent.documentMessage) msgType = 'DOC';
+            else if (messageContent.stickerMessage) msgType = 'STK';
+            
+            const textContent = messageContent.conversation || messageContent.extendedTextMessage?.text || messageContent.imageMessage?.caption || messageContent.videoMessage?.caption || '';
+            const db = loadDB();
+            const settings = await db.getSettings();
+            const prefix = settings?.prefix || process.env.PREFIX || '!';
+            if (textContent.startsWith(prefix)) msgType = 'CMD';
+            
+            console.log(`[${locationStr}] [${msgType}] From: ${sender?.split('@')[0]} | To: ${msg.key.remoteJid?.split('@')[0]} | Content: ${textContent.length > 50 ? textContent.substring(0, 47) + '...' : (textContent || '<media/other>')}`);
+        }
         
         // Anti-delete cache
         if (msg.key && msg.message) {
@@ -102,7 +149,7 @@ async function startBot() {
         }
 
         // Auto React
-        if (settings.autoReact && !msg.key.fromMe) {
+        if (settings.autoReact) {
             try {
                 const reactEmojis = ['🔥', '❤️', '👍', '💯', '✨', '😂', '👏'];
                 const randomEmoji = reactEmojis[Math.floor(Math.random() * reactEmojis.length)];
