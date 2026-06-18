@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: sbg-bot-v2
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: SESSION_ID
+        value: "SBG~your_session_string_here"
+        sync: false

@@ -1,0 +1,8 @@
+{
+  "name": "Remix: SBG Universal WhatsApp Bot",
+  "description": "A customizable Baileys-based WhatsApp bot with SESSION_ID, anti-delete, and database-driven settings for easy hosting on any cloud platform.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

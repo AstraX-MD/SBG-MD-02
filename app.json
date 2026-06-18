@@ -1,0 +1,18 @@
+{
+  "name": "SBG Bot V2",
+  "description": "WhatsApp Bot built with Baileys. Fully configurable without hardcoding.",
+  "repository": "https://github.com/your-username/sbg-bot-v2",
+  "logo": "https://i.ibb.co/0pymBf8T/file-000000002ee471f4a0c0930a2621f19a.png",
+  "keywords": ["nodejs", "bot", "whatsapp"],
+  "env": {
+    "SESSION_ID": {
+      "description": "Get it from SBG Session Generator",
+      "required": true
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ]
+}
