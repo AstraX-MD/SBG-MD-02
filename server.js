@@ -34,7 +34,7 @@ async function startBot() {
     
     console.log(`Using WA v${version.join('.')}`);
 
-    const sock = makeWASocket.default({
+    const sock = makeWASocket({
         version,
         logger: pino({ level: 'silent' }), // Suppress trace logs
         printQRInTerminal: true,
